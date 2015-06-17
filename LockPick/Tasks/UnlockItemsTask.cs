@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Web.Security;
-
 using Sitecore.Configuration;
 using Sitecore.Data;
 using Sitecore.Data.Items;
@@ -23,10 +21,14 @@ namespace LockPick.Tasks
                 return;
             }
 
-            IEnumerable<Item> lockedItems = GetLockedItems(schedule.Database);
-            foreach (Item lockedItem in lockedItems)
+            var lockedItems = GetLockedItems(schedule.Database);
+            foreach (var lockedItem in lockedItems)
             {
-                UnlockIfApplicable(lockedItem);
+                foreach (var language in lockedItem.Languages)
+                {
+                    var lockedItemInSpecificLanguage = schedule.Database.GetItem(lockedItem.ID, language);
+                    UnlockIfApplicable(lockedItemInSpecificLanguage);
+                }
             }
         }
         
@@ -55,14 +57,14 @@ namespace LockPick.Tasks
                 return false;
             }
 
-            string owner = item.Locking.GetOwner();
+            var owner = item.Locking.GetOwner();
             return !IsUserAdmin(owner) && IsUserIdle(owner);
         }
 
         protected virtual bool IsUserAdmin(string username)
         {
             Assert.ArgumentNotNullOrEmpty(username, "username");
-            User user = User.FromName(username, false);
+            var user = User.FromName(username, false);
             Assert.IsNotNull(user, "User cannot be null -- perhaps the user was deleted.");
             return user.IsAdministrator;
         }
@@ -70,7 +72,7 @@ namespace LockPick.Tasks
         protected virtual bool IsUserIdle(string username)
         {
             Assert.ArgumentNotNullOrEmpty(username, "username");
-            DomainAccessGuard.Session userSession = DomainAccessGuard.Sessions.Find(session => session.UserName == username);
+            var userSession = DomainAccessGuard.Sessions.Find(session => session.UserName == username);
             if(userSession == null)
             {
                 return true;
@@ -84,7 +86,7 @@ namespace LockPick.Tasks
             Assert.ArgumentNotNull(item, "item");
             try
             {
-                string owner = item.Locking.GetOwner();
+                var owner = item.Locking.GetOwner();
                 item.Editing.BeginEdit();
                 item.Locking.Unlock();
                 item.Editing.EndEdit();
