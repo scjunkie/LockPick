@@ -26,7 +26,7 @@ namespace LockPick.Tasks
             {
                 foreach (var language in lockedItem.Languages)
                 {
-                    var lockedItemInSpecificLanguage = Sitecore.Context.Database.GetItem(lockedItem.ID, language);
+                    var lockedItemInSpecificLanguage = schedule.Database.GetItem(lockedItem.ID, language);
                     UnlockIfApplicable(lockedItemInSpecificLanguage);
                 }
             }
